@@ -1,5 +1,5 @@
-use std::io::Write;
 use std::collections::HashMap;
+use std::io::{self, BufRead, Write};
 
 pub struct Question {
     question: String,
@@ -110,25 +110,27 @@ impl Question {
             self.build_prompt();
         }
         let prompt = self.prompt.clone();
-        self.printflush(prompt);
-
         let mut tries = 0;
         let valid_responses = self.valid_responses.clone().unwrap();
         loop {
-            let input = self.user_input();
-            for key in valid_responses.keys() {
-                if *input.trim().to_lowercase() == *key {
-                    return Some(valid_responses.get(key).unwrap().clone());
+            let stdio = io::stdin();
+            let input = stdio.lock();
+            let output = io::stdout();
+            if let Ok(response) = prompt_user(input, output, &prompt) {
+                for key in valid_responses.keys() {
+                    if *response.trim().to_lowercase() == *key {
+                        return Some(valid_responses.get(key).unwrap().clone());
+                    }
                 }
-            }
-            if !self.until_acceptable {
-                match self.tries {
-                    None => return None,
-                    Some(max_tries) if tries >= max_tries => return None,
-                    Some(_) => tries += 1,
+                if !self.until_acceptable {
+                    match self.tries {
+                        None => return None,
+                        Some(max_tries) if tries >= max_tries => return None,
+                        Some(_) => tries += 1,
+                    }
                 }
+                self.build_clarification();
             }
-            self.build_clarification();
         }
     }
 
@@ -137,36 +139,20 @@ impl Question {
         self.yes_no();
         self.build_prompt();
         let prompt = self.prompt.clone();
-        self.printflush(prompt);
-
         let valid_responses = self.valid_responses.clone().unwrap();
         loop {
-            let input = self.user_input();
-            for key in valid_responses.keys() {
-                if *input.trim().to_lowercase() == *key {
-                    return valid_responses.get(key).unwrap().clone();
+            let stdio = io::stdin();
+            let input = stdio.lock();
+            let output = io::stdout();
+            if let Ok(response) = prompt_user(input, output, &prompt) {
+                for key in valid_responses.keys() {
+                    if *response.trim().to_lowercase() == *key {
+                        return valid_responses.get(key).unwrap().clone();
+                    }
                 }
+                self.build_clarification();
             }
-            self.build_clarification();
         }
-    }
-
-    #[cfg(not(test))]
-    fn user_input(&self) -> String {
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)
-            .expect("Failed to read line");
-        input
-    }
-
-    #[cfg(test)]
-    fn user_input(&self) -> String {
-        String::from("yes")
-    }
-
-    fn printflush<S>(&self, msg: S) where S: Into<String> {
-        print!("{}", msg.into());
-        std::io::stdout().flush().unwrap();
     }
 
     fn build_prompt(&mut self) {
@@ -187,8 +173,17 @@ impl Question {
             self.prompt += &self.question;
             self.build_prompt();
         }
-
     }
+}
+
+fn prompt_user<R, W>(mut reader: R, mut writer: W, question: &str) -> Result<String, std::io::Error>
+    where R: BufRead,
+          W: Write
+{
+    write!(&mut writer, "{}", question)?;
+    let mut s = String::new();
+    reader.read_line(&mut s)?;
+    Ok(s)
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -201,10 +196,23 @@ pub enum Answer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
+    const QUESTION: &'static str = "what is the meaning to life, the universe, and everything";
+    const ANSWER: &'static str = "42";
+
+    #[test]
+    fn prompt() {
+        let input = Cursor::new(&b"42"[..]);
+        let mut output = Cursor::new(Vec::new());
+        let answer = prompt_user(input, &mut output, QUESTION).unwrap();
+        let output = String::from_utf8(output.into_inner()).expect("Not UTF-8");
+        assert_eq!(QUESTION, output);
+        assert_eq!(ANSWER, answer);
+    }
 
     #[test]
     fn simple_confirm() {
-        let answer = Question::new("what is the meaning to life, the universe, and everything").confirm();
+        let answer = Question::new("Blue").confirm();
         assert_eq!(Answer::YES, answer);
     }
 }
