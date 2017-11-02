@@ -2,5 +2,8 @@
 name = "question"
 version = "0.1.0"
 authors = ["Derek Goddeau <datenstrom@protonmail.com>"]
+description = "Ask a question, what more could you want?"
+repository = "https://gitlab.com/starshell/question"
+license = "MIT"
 
 [dependencies]
