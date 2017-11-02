@@ -176,6 +176,7 @@ impl Question {
     }
 }
 
+#[cfg(not(test))]
 fn prompt_user<R, W>(mut reader: R, mut writer: W, question: &str) -> Result<String, std::io::Error>
     where R: BufRead,
           W: Write
@@ -184,6 +185,15 @@ fn prompt_user<R, W>(mut reader: R, mut writer: W, question: &str) -> Result<Str
     let mut s = String::new();
     reader.read_line(&mut s)?;
     Ok(s)
+}
+
+#[cfg(test)]
+fn prompt_user<R, W>(mut reader: R, mut writer: W, question: &str) -> Result<String, std::io::Error>
+    where R: BufRead,
+          W: Write
+{
+    use tests;
+    Ok( unsafe { tests::test_response.clone().to_string() } )
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -199,7 +209,9 @@ mod tests {
     use std::io::Cursor;
     const QUESTION: &'static str = "what is the meaning to life, the universe, and everything";
     const ANSWER: &'static str = "42";
+    pub static mut test_response: &str = "";
 
+    /*
     #[test]
     fn prompt() {
         let input = Cursor::new(&b"42"[..]);
@@ -209,10 +221,48 @@ mod tests {
         assert_eq!(QUESTION, output);
         assert_eq!(ANSWER, answer);
     }
+    */
 
     #[test]
     fn simple_confirm() {
+        unsafe { test_response = "y" };
         let answer = Question::new("Blue").confirm();
         assert_eq!(Answer::YES, answer);
+
+        unsafe { test_response = "Y" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::YES, answer);
+
+        unsafe { test_response = "yes" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::YES, answer);
+
+        unsafe { test_response = "YES" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::YES, answer);
+
+        unsafe { test_response = "yES" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::YES, answer);
+
+        unsafe { test_response = "n" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::NO, answer);
+
+        unsafe { test_response = "N" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::NO, answer);
+
+        unsafe { test_response = "no" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::NO, answer);
+
+        unsafe { test_response = "NO" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::NO, answer);
+
+        unsafe { test_response = "nO" };
+        let answer = Question::new("Blue").confirm();
+        assert_eq!(Answer::NO, answer);
     }
 }
