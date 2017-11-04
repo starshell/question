@@ -1,30 +1,8 @@
 use std::collections::HashMap;
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
 
-pub trait Input {
-    fn lock(&self) -> std::io::StdinLock;
-}
-
-impl Input for std::io::Stdin {
-    fn lock(&self) -> std::io::StdinLock {
-        self.lock()
-    }
-}
-
-impl<'i> Input for std::io::Cursor<&'i [u8]> {
-    fn lock(&self) -> std::io::StdinLock {
-        self.lock()
-    }
-}
-
-impl Input for std::io::Cursor<Vec<u8>> {
-    fn lock(&self) -> std::io::StdinLock {
-        self.lock()
-    }
-}
-
-pub struct Question<I, W>
-    where I: Input,
+pub struct Question<R, W>
+    where R: Read,
           W: Write
 {
     question: String,
@@ -37,12 +15,12 @@ pub struct Question<I, W>
     until_acceptable: bool,
     show_defaults: bool,
     yes_no: bool,
-    input: I,
-    output: W,
+    reader: R,
+    writer: W,
 }
 
-impl<I, W> Question<I, W>
-    where I: Input,
+impl<R, W> Question<R, W>
+    where R: Read,
           W: Write,
 {
     pub fn new(question: &str) -> Question<std::io::Stdin, std::io::Stdout> {
@@ -58,13 +36,13 @@ impl<I, W> Question<I, W>
             until_acceptable: false,
             show_defaults: false,
             yes_no: false,
-            input: std::io::stdin(),
-            output: std::io::stdout(),
+            reader: std::io::stdin(),
+            writer: std::io::stdout(),
         }
     }
 
     #[cfg(test)]
-    pub fn with_cursor(question: &str, input: I, output: W) -> Question<I, W> {
+    pub fn with_cursor(question: &str, input: R, output: W) -> Question<R, W> {
         let question = question.to_string();
         Question {
             question: question.clone(),
@@ -77,12 +55,12 @@ impl<I, W> Question<I, W>
             until_acceptable: false,
             show_defaults: false,
             yes_no: false,
-            input: input,
-            output: output,
+            reader: input,
+            writer: output,
         }
     }
 
-    pub fn accept<'f>(&'f mut self, accepted: &str) -> &'f mut Question<I, W> {
+    pub fn accept<'f>(&'f mut self, accepted: &str) -> &'f mut Question<R, W> {
         let accepted = accepted.to_string();
         match self.acceptable {
             Some(ref mut vec) => vec.push(accepted),
@@ -95,7 +73,7 @@ impl<I, W> Question<I, W>
         self
     }
 
-    pub fn acceptable<'f>(&'f mut self, accepted: &[String]) -> &'f mut Question<I, W> {
+    pub fn acceptable<'f>(&'f mut self, accepted: &[String]) -> &'f mut Question<R, W> {
         match self.acceptable {
             Some(ref mut vec) => vec.append(&mut accepted.to_vec()),
             None => {
@@ -107,7 +85,7 @@ impl<I, W> Question<I, W>
     }
 
     /// Shorhand for yes("yes") yes("y") no("no") no("n")
-    pub fn yes_no<'f>(&'f mut self) -> &'f mut Question<I, W> {
+    pub fn yes_no<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.yes_no = true;
         let response_keys = vec![
                                 String::from("yes"),
@@ -132,7 +110,7 @@ impl<I, W> Question<I, W>
         self
     }
 
-    pub fn tries<'f>(&'f mut self, tries: u64) -> &'f mut Question<I, W> {
+    pub fn tries<'f>(&'f mut self, tries: u64) -> &'f mut Question<R, W> {
         match tries {
             0 => self.until_acceptable = true,
             1 => return self,
@@ -141,17 +119,17 @@ impl<I, W> Question<I, W>
         self
     }
 
-    pub fn until_acceptable<'f>(&'f mut self) -> &'f mut Question<I, W> {
+    pub fn until_acceptable<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.until_acceptable = true;
         self
     }
 
-    pub fn show_defaults<'f>(&'f mut self) -> &'f mut Question<I, W> {
+    pub fn show_defaults<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.show_defaults = true;
         self
     }
 
-    pub fn default<'f>(&'f mut self, answer: Answer) -> &'f mut Question<I, W> {
+    pub fn default<'f>(&'f mut self, answer: Answer) -> &'f mut Question<R, W> {
         self.default = Some(answer);
         self
     }
@@ -164,8 +142,7 @@ impl<I, W> Question<I, W>
         let mut tries = 0;
         let valid_responses = self.valid_responses.clone().unwrap();
         loop {
-            let input = self.input.lock();
-            if let Ok(response) = prompt_user(input, self.output, &prompt) {
+            if let Ok(response) = self.prompt_user(&prompt) {
                 for key in valid_responses.keys() {
                     if *response.trim().to_lowercase() == *key {
                         return Some(valid_responses.get(key).unwrap().clone());
@@ -193,7 +170,7 @@ impl<I, W> Question<I, W>
             let stdio = io::stdin();
             let input = stdio.lock();
             let output = io::stdout();
-            if let Ok(response) = prompt_user(input, &self.output, &prompt) {
+            if let Ok(response) = self.prompt_user(&prompt) {
                 for key in valid_responses.keys() {
                     if *response.trim().to_lowercase() == *key {
                         return valid_responses.get(key).unwrap().clone();
@@ -223,17 +200,17 @@ impl<I, W> Question<I, W>
             self.build_prompt();
         }
     }
+
+    fn prompt_user(&mut self, question: &str) -> Result<String, std::io::Error> {
+        let mut input = BufReader::new(&mut self.reader);
+        write!(&mut self.writer, "{}", question)?;
+        let mut s = String::new();
+        input.read_line(&mut s)?;
+        Ok(s)
+    }
 }
 
-fn prompt_user<R, W>(mut reader: R, mut writer: W, question: &str) -> Result<String, std::io::Error>
-    where R: BufRead,
-          W: Write
-{
-    write!(&mut writer, "{}", question)?;
-    let mut s = String::new();
-    reader.read_line(&mut s)?;
-    Ok(s)
-}
+
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Answer {
@@ -253,8 +230,14 @@ mod tests {
     #[test]
     fn prompt() {
         let input = Cursor::new(&b"42"[..]);
-        let output = Box::new(Cursor::new(Vec::new()));
-        let answer = prompt_user(input, &output, QUESTION).unwrap();
+        let mut output = Cursor::new(Vec::new());
+        let answer;
+
+        {
+            let mut question = Question::with_cursor(QUESTION, input, &mut output);
+            answer = question.prompt_user(QUESTION).unwrap();
+        } // end borrow of output before using it
+
         let output = String::from_utf8(output.into_inner()).expect("Not UTF-8");
         assert_eq!(QUESTION, output);
         assert_eq!(ANSWER, answer);
