@@ -1,7 +1,32 @@
 use std::collections::HashMap;
 use std::io::{self, BufRead, Write};
 
-pub struct Question {
+pub trait Input {
+    fn lock(&self) -> std::io::StdinLock;
+}
+
+impl Input for std::io::Stdin {
+    fn lock(&self) -> std::io::StdinLock {
+        self.lock()
+    }
+}
+
+impl<'i> Input for std::io::Cursor<&'i [u8]> {
+    fn lock(&self) -> std::io::StdinLock {
+        self.lock()
+    }
+}
+
+impl Input for std::io::Cursor<Vec<u8>> {
+    fn lock(&self) -> std::io::StdinLock {
+        self.lock()
+    }
+}
+
+pub struct Question<I, W>
+    where I: Input,
+          W: Write
+{
     question: String,
     prompt: String,
     default: Option<Answer>,
@@ -12,10 +37,15 @@ pub struct Question {
     until_acceptable: bool,
     show_defaults: bool,
     yes_no: bool,
+    input: I,
+    output: W,
 }
 
-impl Question {
-    pub fn new(question: &str) -> Question {
+impl<I, W> Question<I, W>
+    where I: Input,
+          W: Write,
+{
+    pub fn new(question: &str) -> Question<std::io::Stdin, std::io::Stdout> {
         let question = question.to_string();
         Question {
             question: question.clone(),
@@ -28,10 +58,31 @@ impl Question {
             until_acceptable: false,
             show_defaults: false,
             yes_no: false,
+            input: std::io::stdin(),
+            output: std::io::stdout(),
         }
     }
 
-    pub fn accept<'a>(&'a mut self, accepted: &str) -> &'a mut Question {
+    #[cfg(test)]
+    pub fn with_cursor(question: &str, input: I, output: W) -> Question<I, W> {
+        let question = question.to_string();
+        Question {
+            question: question.clone(),
+            prompt: question,
+            default: None,
+            acceptable: None,
+            valid_responses: None,
+            clarification: None,
+            tries: None,
+            until_acceptable: false,
+            show_defaults: false,
+            yes_no: false,
+            input: input,
+            output: output,
+        }
+    }
+
+    pub fn accept<'f>(&'f mut self, accepted: &str) -> &'f mut Question<I, W> {
         let accepted = accepted.to_string();
         match self.acceptable {
             Some(ref mut vec) => vec.push(accepted),
@@ -44,7 +95,7 @@ impl Question {
         self
     }
 
-    pub fn acceptable<'a>(&'a mut self, accepted: &[String]) -> &'a mut Question {
+    pub fn acceptable<'f>(&'f mut self, accepted: &[String]) -> &'f mut Question<I, W> {
         match self.acceptable {
             Some(ref mut vec) => vec.append(&mut accepted.to_vec()),
             None => {
@@ -56,7 +107,7 @@ impl Question {
     }
 
     /// Shorhand for yes("yes") yes("y") no("no") no("n")
-    pub fn yes_no<'a>(&'a mut self) -> &'a mut Question {
+    pub fn yes_no<'f>(&'f mut self) -> &'f mut Question<I, W> {
         self.yes_no = true;
         let response_keys = vec![
                                 String::from("yes"),
@@ -81,7 +132,7 @@ impl Question {
         self
     }
 
-    pub fn tries<'a>(&'a mut self, tries: u64) -> &'a mut Question {
+    pub fn tries<'f>(&'f mut self, tries: u64) -> &'f mut Question<I, W> {
         match tries {
             0 => self.until_acceptable = true,
             1 => return self,
@@ -90,22 +141,22 @@ impl Question {
         self
     }
 
-    pub fn until_acceptable<'a>(&'a mut self) -> &'a mut Question {
+    pub fn until_acceptable<'f>(&'f mut self) -> &'f mut Question<I, W> {
         self.until_acceptable = true;
         self
     }
 
-    pub fn show_defaults<'a>(&'a mut self) -> &'a mut Question {
+    pub fn show_defaults<'f>(&'f mut self) -> &'f mut Question<I, W> {
         self.show_defaults = true;
         self
     }
 
-    pub fn default<'a>(&'a mut self, answer: Answer) -> &'a mut Question {
+    pub fn default<'f>(&'f mut self, answer: Answer) -> &'f mut Question<I, W> {
         self.default = Some(answer);
         self
     }
 
-    pub fn ask<'a>(&mut self) -> Option<Answer> {
+    pub fn ask(&mut self) -> Option<Answer> {
         if self.yes_no {
             self.build_prompt();
         }
@@ -113,10 +164,8 @@ impl Question {
         let mut tries = 0;
         let valid_responses = self.valid_responses.clone().unwrap();
         loop {
-            let stdio = io::stdin();
-            let input = stdio.lock();
-            let output = io::stdout();
-            if let Ok(response) = prompt_user(input, output, &prompt) {
+            let input = self.input.lock();
+            if let Ok(response) = prompt_user(input, self.output, &prompt) {
                 for key in valid_responses.keys() {
                     if *response.trim().to_lowercase() == *key {
                         return Some(valid_responses.get(key).unwrap().clone());
@@ -144,7 +193,7 @@ impl Question {
             let stdio = io::stdin();
             let input = stdio.lock();
             let output = io::stdout();
-            if let Ok(response) = prompt_user(input, output, &prompt) {
+            if let Ok(response) = prompt_user(input, &self.output, &prompt) {
                 for key in valid_responses.keys() {
                     if *response.trim().to_lowercase() == *key {
                         return valid_responses.get(key).unwrap().clone();
@@ -176,7 +225,6 @@ impl Question {
     }
 }
 
-#[cfg(not(test))]
 fn prompt_user<R, W>(mut reader: R, mut writer: W, question: &str) -> Result<String, std::io::Error>
     where R: BufRead,
           W: Write
@@ -185,15 +233,6 @@ fn prompt_user<R, W>(mut reader: R, mut writer: W, question: &str) -> Result<Str
     let mut s = String::new();
     reader.read_line(&mut s)?;
     Ok(s)
-}
-
-#[cfg(test)]
-fn prompt_user<R, W>(mut reader: R, mut writer: W, question: &str) -> Result<String, std::io::Error>
-    where R: BufRead,
-          W: Write
-{
-    use tests;
-    Ok( unsafe { tests::test_response.clone().to_string() } )
 }
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -211,58 +250,22 @@ mod tests {
     const ANSWER: &'static str = "42";
     pub static mut test_response: &str = "";
 
-    /*
     #[test]
     fn prompt() {
         let input = Cursor::new(&b"42"[..]);
-        let mut output = Cursor::new(Vec::new());
-        let answer = prompt_user(input, &mut output, QUESTION).unwrap();
+        let output = Box::new(Cursor::new(Vec::new()));
+        let answer = prompt_user(input, &output, QUESTION).unwrap();
         let output = String::from_utf8(output.into_inner()).expect("Not UTF-8");
         assert_eq!(QUESTION, output);
         assert_eq!(ANSWER, answer);
     }
-    */
 
     #[test]
     fn simple_confirm() {
-        unsafe { test_response = "y" };
-        let answer = Question::new("Blue").confirm();
+        let response = String::from("y");
+        let input = Cursor::new(response.into_bytes());
+        let mut output = Cursor::new(Vec::new());
+        let answer = Question::with_cursor("Blue", input, output).confirm();
         assert_eq!(Answer::YES, answer);
-
-        unsafe { test_response = "Y" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::YES, answer);
-
-        unsafe { test_response = "yes" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::YES, answer);
-
-        unsafe { test_response = "YES" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::YES, answer);
-
-        unsafe { test_response = "yES" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::YES, answer);
-
-        unsafe { test_response = "n" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::NO, answer);
-
-        unsafe { test_response = "N" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::NO, answer);
-
-        unsafe { test_response = "no" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::NO, answer);
-
-        unsafe { test_response = "NO" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::NO, answer);
-
-        unsafe { test_response = "nO" };
-        let answer = Question::new("Blue").confirm();
-        assert_eq!(Answer::NO, answer);
     }
 }
