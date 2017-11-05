@@ -57,6 +57,8 @@ Continue? (Y/n) yes
 
 ## Contributing
 
+The project is mirrored to GitHub, but all development is done on GitLab. Please use the [GitLab issue tracker](https://gitlab.com/starshell/question/issues).
+
 To contribute to Question, please see [CONTRIBUTING](CONTRIBUTING.md).
 
 ## License
