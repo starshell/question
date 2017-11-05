@@ -9,9 +9,9 @@ pub struct Question<R, W>
     question: String,
     prompt: String,
     default: Option<Answer>,
+    clarification: Option<String>,
     acceptable: Option<Vec<String>>,
     valid_responses: Option<HashMap<String, Answer>>,
-    clarification: Option<String>,
     tries: Option<u64>,
     until_acceptable: bool,
     show_defaults: bool,
@@ -20,10 +20,7 @@ pub struct Question<R, W>
     writer: W,
 }
 
-impl<R, W> Question<R, W>
-    where R: Read,
-          W: Write,
-{
+impl Question<std::io::Stdin, std::io::Stdout> {
     pub fn new(question: &str) -> Question<std::io::Stdin, std::io::Stdout> {
         let question = question.to_string();
         Question {
@@ -41,7 +38,12 @@ impl<R, W> Question<R, W>
             writer: std::io::stdout(),
         }
     }
+}
 
+impl<R, W> Question<R, W>
+    where R: Read,
+          W: Write,
+{
     #[cfg(test)]
     pub fn with_cursor(question: &str, input: R, output: W) -> Question<R, W> {
         let question = question.to_string();
@@ -74,13 +76,11 @@ impl<R, W> Question<R, W>
         self
     }
 
-    pub fn acceptable<'f>(&'f mut self, accepted: &[String]) -> &'f mut Question<R, W> {
+    pub fn acceptable<'f>(&'f mut self, accepted: Vec<&str>) -> &'f mut Question<R, W> {
+        let mut accepted = accepted.into_iter().map(|x| x.into()).collect();
         match self.acceptable {
-            Some(ref mut vec) => vec.append(&mut accepted.to_vec()),
-            None => {
-                let vec = accepted.to_vec();
-                self.acceptable = Some(vec);
-            },
+            Some(ref mut vec) => vec.append(&mut accepted),
+            None => self.acceptable = Some(accepted),
         }
         self
     }
@@ -238,13 +238,7 @@ impl<R, W> Question<R, W>
         input.read_line(&mut s)?;
         Ok(s)
     }
-
-    #[cfg(test)]
-    fn get_self(self) -> Question<R, W> {
-        self
-    }
 }
-
 
 
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
@@ -258,6 +252,65 @@ pub enum Answer {
 mod tests {
     use super::*;
     use std::io::Cursor;
+
+    #[test]
+    fn default_constructor() {
+        let question = "Continue?";
+        let q = Question::new(question);
+        assert_eq!(question, q.question);
+        assert_eq!(question, q.prompt);
+        assert_eq!(None, q.default);
+        assert_eq!(None, q.acceptable);
+        assert_eq!(None, q.valid_responses);
+        assert_eq!(None, q.clarification);
+        assert_eq!(None, q.tries);
+        assert_eq!(false, q.until_acceptable);
+        assert_eq!(false, q.show_defaults);
+        assert_eq!(false, q.yes_no);
+    }
+
+
+    #[test]
+    fn set_default() {
+        macro_rules! default {
+            ( $question:expr, $set:expr, $expected:expr ) => {
+                let mut q = Question::new($question);
+                q.default($set);
+                assert_eq!($expected, q.default.unwrap());
+            }
+        }
+        let set = String::from("Yes Please!");
+        let response = String::from("Yes Please!");
+        default!("Continue?", Answer::NO, Answer::NO);
+        default!("Continue?", Answer::YES, Answer::YES);
+        default!("Continue?", Answer::RESPONSE(set), Answer::RESPONSE(response));
+    }
+
+    #[test]
+    fn accept() {
+        let mut q = Question::new("Continue?");
+
+        q.accept("y");
+        assert_eq!(vec!["y"], q.acceptable.unwrap());
+
+        let mut q = Question::new("Continue?");
+        q.accept("y");
+        q.accept("yes");
+        assert_eq!(vec!["y", "yes"], q.acceptable.unwrap());
+    }
+
+    #[test]
+    fn acceptable() {
+        let mut q = Question::new("Continue?");
+
+        q.acceptable(vec!["y"]);
+        assert_eq!(vec!["y"], q.acceptable.unwrap());
+
+        let mut q = Question::new("Continue?");
+        q.accept("y");
+        q.acceptable(vec!["yes", "n", "no"]);
+        assert_eq!(vec!["y", "yes", "n", "no"], q.acceptable.unwrap());
+    }
 
     #[test]
     fn prompt() {
@@ -330,10 +383,73 @@ mod tests {
                 let response = String::from($i);
                 let input = Cursor::new(response.into_bytes());
                 let output = Cursor::new(Vec::new());
-                let q = Question::with_cursor($q, input, output).clarification($clarification).get_self();
+                let mut q = Question::with_cursor($q, input, output);
+                q.clarification($clarification);
                 assert_eq!($clarification, q.clarification.unwrap());
             }
         }
         confirm_clarification!("what is the meaning to life", "42", "14*3");
+        confirm_clarification!("Continue?", "wat", "Please respond with yes/no");
+    }
+
+    #[test]
+    fn set_max_tries() {
+        macro_rules! confirm_max_tries {
+            ( $i:expr, $q:expr, $max_tries:expr ) => {
+                let response = String::from($i);
+                let input = Cursor::new(response.into_bytes());
+                let output = Cursor::new(Vec::new());
+                let mut q = Question::with_cursor($q, input, output);
+                q.tries($max_tries);
+                assert_eq!($max_tries, q.tries.unwrap());
+            }
+        }
+        confirm_max_tries!("what is the meaning to life", "42", 42);
+        confirm_max_tries!("Continue?", "wat", 0x79);
+    }
+
+    #[test]
+    fn set_until_acceptable() {
+        macro_rules! confirm_until_acceptable {
+            ( $i:expr, $q:expr, $until_acceptable:expr ) => {
+                let response = String::from($i);
+                let input = Cursor::new(response.into_bytes());
+                let output = Cursor::new(Vec::new());
+                let mut q = Question::with_cursor($q, input, output);
+                q.until_acceptable();
+                assert_eq!($until_acceptable, q.until_acceptable);
+            }
+        }
+        confirm_until_acceptable!("what is the meaning to life", "42", true);
+    }
+
+    #[test]
+    fn set_show_defaults() {
+        macro_rules! confirm_show_defaults {
+            ( $i:expr, $q:expr, $show_defaults:expr ) => {
+                let response = String::from($i);
+                let input = Cursor::new(response.into_bytes());
+                let output = Cursor::new(Vec::new());
+                let mut q = Question::with_cursor($q, input, output);
+                q.show_defaults();
+                assert_eq!($show_defaults, q.show_defaults);
+            }
+        }
+        confirm_show_defaults!("what is the meaning to life", "42", true);
+    }
+
+    #[test]
+    fn set_yes_no() {
+        macro_rules! confirm_yes_no {
+            ( $i:expr, $q:expr, $yes_no:expr ) => {
+                let response = String::from($i);
+                let input = Cursor::new(response.into_bytes());
+                let output = Cursor::new(Vec::new());
+                let mut q = Question::with_cursor($q, input, output);
+                q.yes_no();
+                assert_eq!($yes_no, q.yes_no);
+            }
+        }
+        confirm_yes_no!("what is the meaning to life", "42", true);
     }
 }
