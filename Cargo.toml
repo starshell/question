@@ -3,7 +3,19 @@ name = "question"
 version = "0.1.0"
 authors = ["Derek Goddeau <datenstrom@protonmail.com>"]
 description = "Ask a question, what more could you want?"
+documentation = "https://docs.rs/question/0.1.0/question/"
+homepage = "https://gitlab.com/starshell/question"
 repository = "https://gitlab.com/starshell/question"
 license = "MIT"
+readme = "README.md"
+keywords = ["question", "ask", "answer", "cli", "prompt"]
+categories = ["command-line-utilities", "command-line-interface"]
+
+[badges]
+
+gitlab = { repository = "starshell/question", branch = "master" }
+appveyor = { repository = "starshell/question", branch = "master", service = "gitlab" }
+codecov = { repository = "starshell/question", branch = "master", service = "gitlab" }
+maintenance = { status = "actively-developed" }
 
 [dependencies]
