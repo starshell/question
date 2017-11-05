@@ -1,6 +1,6 @@
 # Contributing
 
-Contributions are welcome! Please first discuss the change you wish to make via issue or email before making a change.
+Contributions are welcome! Please first discuss the change you wish to make via issue or email before making a change. It's a small focused library, dive in.
 
 ## Roadmap to Stable
 - [ ] General bug hunting
