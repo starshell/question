@@ -38,6 +38,18 @@ fn main() {
 }
 ```
 
+Examples can also be ran directly:
+
+```sh
+$ cargo run --example yes_no_with_defaults
+   Compiling question v0.1.0 (file:///home/datenstrom/workspace/starshell/question)
+    Finished dev [unoptimized + debuginfo] target(s) in 8.75 secs
+     Running `target/debug/examples/yes_no_with_defaults`
+Continue? (Y/n) why
+Continue? (Y/n) yes
+```
+
+
 ## Contributing
 
 To contribute to Question, please see [CONTRIBUTING](CONTRIBUTING.md).
