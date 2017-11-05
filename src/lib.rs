@@ -220,6 +220,7 @@ impl<R, W> Question<R, W>
                 Some(_) => panic!(),
             }
         }
+        self.prompt += " ";
     }
 
     fn build_clarification(&mut self) {
@@ -234,9 +235,10 @@ impl<R, W> Question<R, W>
     fn prompt_user(&mut self, question: &str) -> Result<String, std::io::Error> {
         let mut input = BufReader::new(&mut self.reader);
         write!(&mut self.writer, "{}", question)?;
+        std::io::stdout().flush()?;
         let mut s = String::new();
         input.read_line(&mut s)?;
-        Ok(s)
+        Ok(String::from(s.trim()))
     }
 }
 
@@ -367,6 +369,14 @@ mod tests {
                 assert_eq!(Some(Answer::RESPONSE(String::from($expected))), actual);
             }
         }
+        ask!("y\n", "Continue?", "y");
+        ask!("yes\n", "Continue?", "yes");
+        ask!("n\n", "Continue?", "n");
+        ask!("no\n", "Continue?", "no");
+        ask!("what is the meaning to life,\n", "42", "what is the meaning to life,");
+        ask!("the universe,\n", "42", "the universe,");
+        ask!("and everything\n", "42", "and everything");
+
         ask!("y", "Continue?", "y");
         ask!("yes", "Continue?", "yes");
         ask!("n", "Continue?", "n");
