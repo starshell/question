@@ -6,6 +6,7 @@
 stages:
     - build
     - test
+    - docs
     - deploy
 
 #########
@@ -45,13 +46,13 @@ nightly:cargo:
   allow_failure: true
 
 
-#########
-# Pages #
-#########
+##########
+# Deploy #
+##########
 
 pages:
   image: rust
-  stage: deploy 
+  stage: docs 
   script:
     - cargo doc --all --no-deps
     - rm -rf public
@@ -62,3 +63,13 @@ pages:
       - public
   only:
     - master
+    - tags
+
+release:
+    image: rust
+    stage: deploy
+    script:
+        - cargo login $CRATES_IO_TOKEN
+        - cargo publish
+    only:
+        - tags
