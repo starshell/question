@@ -1,5 +1,5 @@
-Version 0.2.0 (TBD)
-===================
+Version 0.2.0 (2017-11-5)
+=========================
 
 Public Interface
 ----------------
@@ -28,10 +28,23 @@ Bug Fixes
 - Add a space between question and defaults
 - If a default answer exists return it when empty string is given
 
+CI
+--
+- Added CI for Linux
+- Added CI for Windows
+- Added Code Coverage
+- Added tests for entire public interface
+
+Documentation
+-------------
+
+- Added CHANGELOG
+- Added CONTRIBUTING
+- Completed README
+
 Misc
 ----
 - Refactor to support dependency injection replacing `Stdin` and `Stdout` in tests.
-- Added tests for entire public interface
 
 
 Version 0.1.0 (2017-11-3)
