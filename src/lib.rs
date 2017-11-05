@@ -141,6 +141,7 @@ impl<R, W> Question<R, W>
     }
 
     pub fn ask(&mut self) -> Option<Answer> {
+        self.build_prompt();
         if self.until_acceptable {
             return Some(self.until_valid());
         }
@@ -163,6 +164,9 @@ impl<R, W> Question<R, W>
     fn get_response(&mut self) -> Result<Answer, std::io::Error> {
         let prompt = self.prompt.clone();
         match self.prompt_user(&prompt) {
+            Ok(ref answer) if (self.default != None) && answer == "" => {
+                return Ok(self.default.clone().unwrap())
+            },
             Ok(answer) => return Ok(Answer::RESPONSE(answer)),
             Err(e) => return Err(e),
         }
@@ -178,6 +182,11 @@ impl<R, W> Question<R, W>
             for key in valid_responses.keys() {
                 if *response.trim().to_lowercase() == *key {
                     return Some(valid_responses.get(key).unwrap().clone());
+                }
+                if let Some(default) = self.default.clone() {
+                    if response == "" {
+                        return Some(default);
+                    }
                 }
             }
         }
@@ -214,10 +223,14 @@ impl<R, W> Question<R, W>
     fn build_prompt(&mut self) {
         if self.show_defaults {
             match self.default {
-                Some(Answer::YES) => self.prompt += "[Y/n]",
-                Some(Answer::NO) => self.prompt += "[y/N]",
-                None => self.prompt += "[y/n]",
-                Some(_) => panic!(),
+                Some(Answer::YES) => self.prompt += " (Y/n)",
+                Some(Answer::NO) => self.prompt += " (y/N)",
+                Some(Answer::RESPONSE(ref s)) => {
+                    self.prompt += " (";
+                    self.prompt += &s;
+                    self.prompt += ")";
+                },
+                None => self.prompt += " (y/n)",
             }
         }
         self.prompt += " ";
