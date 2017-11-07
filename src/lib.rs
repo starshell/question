@@ -3,8 +3,9 @@ use std::io::{BufRead, BufReader, Read, Write};
 
 #[derive(Clone)]
 pub struct Question<R, W>
-    where R: Read,
-          W: Write
+where
+    R: Read,
+    W: Write,
 {
     question: String,
     prompt: String,
@@ -41,8 +42,9 @@ impl Question<std::io::Stdin, std::io::Stdout> {
 }
 
 impl<R, W> Question<R, W>
-    where R: Read,
-          W: Write,
+where
+    R: Read,
+    W: Write,
 {
     #[cfg(test)]
     pub fn with_cursor(question: &str, input: R, output: W) -> Question<R, W> {
@@ -71,7 +73,7 @@ impl<R, W> Question<R, W>
                 let mut vec = Vec::new();
                 vec.push(accepted);
                 self.acceptable = Some(vec);
-            },
+            }
         }
         self
     }
@@ -89,14 +91,15 @@ impl<R, W> Question<R, W>
     pub fn yes_no<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.yes_no = true;
         let response_keys = vec![
-                                String::from("yes"),
-                                String::from("y"),
-                                String::from("no"),
-                                String::from("n")
-                            ];
+            String::from("yes"),
+            String::from("y"),
+            String::from("no"),
+            String::from("n"),
+        ];
 
         let response_values = vec![Answer::YES, Answer::YES, Answer::NO, Answer::NO];
-        let mut valid_responses: HashMap<String, Answer> = response_keys.into_iter()
+        let mut valid_responses: HashMap<String, Answer> = response_keys
+            .into_iter()
             .zip(response_values.into_iter())
             .collect();
 
@@ -105,7 +108,7 @@ impl<R, W> Question<R, W>
                 for (k, v) in valid_responses.drain() {
                     hashmap.insert(k, v);
                 }
-            },
+            }
             None => self.valid_responses = Some(valid_responses),
         }
         self
@@ -166,7 +169,7 @@ impl<R, W> Question<R, W>
         match self.prompt_user(&prompt) {
             Ok(ref answer) if (self.default != None) && answer == "" => {
                 return Ok(self.default.clone().unwrap())
-            },
+            }
             Ok(answer) => return Ok(Answer::RESPONSE(answer)),
             Err(e) => return Err(e),
         }
@@ -215,7 +218,7 @@ impl<R, W> Question<R, W>
                 None => {
                     self.build_clarification();
                     continue;
-                },
+                }
             }
         }
     }
@@ -229,7 +232,7 @@ impl<R, W> Question<R, W>
                     self.prompt += " (";
                     self.prompt += &s;
                     self.prompt += ")";
-                },
+                }
                 None => self.prompt += " (y/n)",
             }
         }
@@ -298,7 +301,11 @@ mod tests {
         let response = String::from("Yes Please!");
         default!("Continue?", Answer::NO, Answer::NO);
         default!("Continue?", Answer::YES, Answer::YES);
-        default!("Continue?", Answer::RESPONSE(set), Answer::RESPONSE(response));
+        default!(
+            "Continue?",
+            Answer::RESPONSE(set),
+            Answer::RESPONSE(response)
+        );
     }
 
     #[test]
@@ -350,7 +357,10 @@ mod tests {
         prompt!("the universe", "42");
         prompt!("everything", "42");
         prompt!("Continue", "yes");
-        prompt!("What is the only manmade object visable from the moon?", "The Great Wall of China");
+        prompt!(
+            "What is the only manmade object visable from the moon?",
+            "The Great Wall of China"
+        );
     }
 
     #[test]
@@ -386,7 +396,11 @@ mod tests {
         ask!("yes\n", "Continue?", "yes");
         ask!("n\n", "Continue?", "n");
         ask!("no\n", "Continue?", "no");
-        ask!("what is the meaning to life,\n", "42", "what is the meaning to life,");
+        ask!(
+            "what is the meaning to life,\n",
+            "42",
+            "what is the meaning to life,"
+        );
         ask!("the universe,\n", "42", "the universe,");
         ask!("and everything\n", "42", "and everything");
 
@@ -394,7 +408,11 @@ mod tests {
         ask!("yes", "Continue?", "yes");
         ask!("n", "Continue?", "n");
         ask!("no", "Continue?", "no");
-        ask!("what is the meaning to life,", "42", "what is the meaning to life,");
+        ask!(
+            "what is the meaning to life,",
+            "42",
+            "what is the meaning to life,"
+        );
         ask!("the universe,", "42", "the universe,");
         ask!("and everything", "42", "and everything");
     }
