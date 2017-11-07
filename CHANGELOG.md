@@ -1,3 +1,15 @@
+Version 0.2.1 (TBD)
+===================
+
+Documentation
+-------------
+- Add initial module level documentation 
+- Add initial public interface documentation
+
+Misc
+----
+- Ran rustfmt
+
 Version 0.2.0 (2017-11-5)
 =========================
 
@@ -37,7 +49,6 @@ CI
 
 Documentation
 -------------
-
 - Added CHANGELOG
 - Added CONTRIBUTING
 - Completed README
