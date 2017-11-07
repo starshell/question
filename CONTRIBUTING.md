@@ -13,3 +13,7 @@ The project is mirrored to GitHub, but all development is done on GitLab. Please
 - [ ] More examples
 - [ ] Extend dependency injection to allow for testing of multiple user inputs
 - [ ] Compliance with the [Rust API Guidelines](https://rust-lang-nursery.github.io/api-guidelines/)
+
+## Wants
+- [ ] Specify a return type or provide a parser
+- [ ] Properly handle secrets
