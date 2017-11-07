@@ -12,10 +12,7 @@ keywords = ["question", "ask", "answer", "cli", "prompt"]
 categories = ["command-line-utilities", "command-line-interface"]
 
 [badges]
-
 gitlab = { repository = "starshell/question", branch = "master" }
 appveyor = { repository = "starshell/question", branch = "master", service = "gitlab" }
 codecov = { repository = "starshell/question", branch = "master", service = "gitlab" }
 maintenance = { status = "actively-developed" }
-
-[dependencies]
