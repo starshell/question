@@ -1,6 +1,21 @@
+//! An easy to use library for asking users questions when
+//! designing Command Line Interface applications. Reduces
+//! questions to a one liner.
+//!
+//! # Examples
+//!
+//! Asking a user a yes or no question requiring that
+//! a valid response is provided.
+//!
+//! ```no_run
+//! # use question::Question;
+//! Question::new("Do you want to continue?").confirm();
+//! ```
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 
+/// An `Answer` builder. Once a question has been formulated
+/// either `ask` or `confirm` may be used to get an answer.
 #[derive(Clone)]
 pub struct Question<R, W>
 where
@@ -65,6 +80,7 @@ where
         }
     }
 
+    /// Add a single acceptable response to the list.
     pub fn accept<'f>(&'f mut self, accepted: &str) -> &'f mut Question<R, W> {
         let accepted = accepted.to_string();
         match self.acceptable {
@@ -78,6 +94,7 @@ where
         self
     }
 
+    /// Add a collection of acceptable responses to the list.
     pub fn acceptable<'f>(&'f mut self, accepted: Vec<&str>) -> &'f mut Question<R, W> {
         let mut accepted = accepted.into_iter().map(|x| x.into()).collect();
         match self.acceptable {
@@ -87,7 +104,7 @@ where
         self
     }
 
-    /// Shorhand for yes("yes") yes("y") no("no") no("n")
+    /// Shorthand the most common case of a yes/no question.
     pub fn yes_no<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.yes_no = true;
         let response_keys = vec![
@@ -114,6 +131,8 @@ where
         self
     }
 
+    /// Set a maximum number of attempts to try and get an
+    /// acceptable answer from the user.
     pub fn tries<'f>(&'f mut self, tries: u64) -> &'f mut Question<R, W> {
         match tries {
             0 => self.until_acceptable = true,
@@ -123,26 +142,34 @@ where
         self
     }
 
+    /// Never stop asking until the user provides an acceptable
+    /// answer.
     pub fn until_acceptable<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.until_acceptable = true;
         self
     }
 
+    /// Show the default response to the user that will be
+    /// submitted if they enter an empty string `"\n"`.
     pub fn show_defaults<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.show_defaults = true;
         self
     }
 
+    /// Provide a default answer.
     pub fn default<'f>(&'f mut self, answer: Answer) -> &'f mut Question<R, W> {
         self.default = Some(answer);
         self
     }
 
+    /// Provide a clarification to be shown if the user does
+    /// not enter an acceptable answer on the first try.
     pub fn clarification<'f>(&'f mut self, c: &str) -> &'f mut Question<R, W> {
         self.clarification = Some(c.into());
         self
     }
 
+    /// Ask the user a question exactly as it has been built.
     pub fn ask(&mut self) -> Option<Answer> {
         self.build_prompt();
         if self.until_acceptable {
@@ -157,7 +184,17 @@ where
         }
     }
 
-    /// Shorthand for yes_no() until_acceptable()
+    /// Ask a user a yes/no question until an acceptable
+    /// response is given.
+    ///
+    /// Shorthand for:
+    /// 
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("Why?").yes_no()
+    ///     .until_acceptable()
+    ///     .ask();
+    /// ```
     pub fn confirm(&mut self) -> Answer {
         self.yes_no();
         self.build_prompt();
@@ -392,29 +429,30 @@ mod tests {
                 assert_eq!(Some(Answer::RESPONSE(String::from($expected))), actual);
             }
         }
+
         ask!("y\n", "Continue?", "y");
         ask!("yes\n", "Continue?", "yes");
         ask!("n\n", "Continue?", "n");
         ask!("no\n", "Continue?", "no");
+        ask!("the universe,\n", "42", "the universe,");
+        ask!("and everything\n", "42", "and everything");
         ask!(
             "what is the meaning to life,\n",
             "42",
             "what is the meaning to life,"
         );
-        ask!("the universe,\n", "42", "the universe,");
-        ask!("and everything\n", "42", "and everything");
 
         ask!("y", "Continue?", "y");
         ask!("yes", "Continue?", "yes");
         ask!("n", "Continue?", "n");
         ask!("no", "Continue?", "no");
+        ask!("the universe,", "42", "the universe,");
+        ask!("and everything", "42", "and everything");
         ask!(
             "what is the meaning to life,",
             "42",
             "what is the meaning to life,"
         );
-        ask!("the universe,", "42", "the universe,");
-        ask!("and everything", "42", "and everything");
     }
 
     #[test]
