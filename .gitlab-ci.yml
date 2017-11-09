@@ -38,12 +38,15 @@ stable:cargo:
 beta:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:beta
   <<: *cargo_test
-  allow_failure: true
 
 nightly:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
+  before_script:
+      - export PATH="$PATH:$HOME/.cargo/bin"
+      - which rustfmt || cargo install rustfmt
+      - cargo fmt -- --write-mode=diff
+      - cargo build --features "strict"
   <<: *cargo_test
-  allow_failure: true
 
 
 ##########
