@@ -1,6 +1,6 @@
 //! An easy to use library for asking users questions when
 //! designing Command Line Interface applications. Reduces
-//! questions to a one liner.
+//! asking questions to a one liner.
 //!
 //! # Examples
 //!
@@ -16,6 +16,27 @@ use std::io::{BufRead, BufReader, Read, Write};
 
 /// An `Answer` builder. Once a question has been formulated
 /// either `ask` or `confirm` may be used to get an answer.
+///
+/// # Examples
+///
+/// The `ask` function will execute exactly the configuration
+/// of the question. This will ask the user if they would like
+/// to continue until they provide a valid yes or no response.
+///
+/// ```no_run
+/// # use question::Question;
+/// Question::new("Do you want to continue?")
+///     .yes_no()
+///     .until_acceptable()
+///     .ask();
+/// ```
+///
+/// The following `confirm` function is exactly equivalent.
+///
+/// ```no_run
+/// # use question::Question;
+/// Question::new("Do you want to continue?").confirm();
+/// ```
 #[derive(Clone)]
 pub struct Question<R, W>
 where
@@ -81,6 +102,20 @@ where
     }
 
     /// Add a single acceptable response to the list.
+    ///
+    /// # Examples
+    ///
+    /// The following will ask the user if they would like
+    /// to continue until either "y" or "n" is entered.
+    ///
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("Do you want to continue?")
+    ///     .accept("y")
+    ///     .accept("n")
+    ///     .until_acceptable()
+    ///     .ask();
+    /// ```
     pub fn accept<'f>(&'f mut self, accepted: &str) -> &'f mut Question<R, W> {
         let accepted = accepted.to_string();
         match self.acceptable {
@@ -95,6 +130,19 @@ where
     }
 
     /// Add a collection of acceptable responses to the list.
+    ///
+    /// # Examples
+    ///
+    /// The following will ask the user if they would like
+    /// to continue until either "y" or "n" is entered.
+    ///
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("Do you want to continue?")
+    ///     .acceptable(vec!["y", "n"])
+    ///     .until_acceptable()
+    ///     .ask();
+    /// ```
     pub fn acceptable<'f>(&'f mut self, accepted: Vec<&str>) -> &'f mut Question<R, W> {
         let mut accepted = accepted.into_iter().map(|x| x.into()).collect();
         match self.acceptable {
@@ -105,6 +153,20 @@ where
     }
 
     /// Shorthand the most common case of a yes/no question.
+    ///
+    /// # Examples
+    ///
+    /// The following will ask the user if they would like
+    /// to continue until either "y", "n", "yes", or "no",
+    /// is entered.
+    ///
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("Do you want to continue?")
+    ///     .yes_no()
+    ///     .until_acceptable()
+    ///     .ask();
+    /// ```
     pub fn yes_no<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.yes_no = true;
         let response_keys = vec![
@@ -133,6 +195,21 @@ where
 
     /// Set a maximum number of attempts to try and get an
     /// acceptable answer from the user.
+    ///
+    /// # Examples
+    ///
+    /// The following will ask the user if they would like
+    /// to continue until either "y", "n", "yes", or "no",
+    /// is entered, or until they have entered 3 invalid
+    /// responses.
+    ///
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("Do you want to continue?")
+    ///     .yes_no()
+    ///     .tries(3)
+    ///     .ask();
+    /// ```
     pub fn tries<'f>(&'f mut self, tries: u64) -> &'f mut Question<R, W> {
         match tries {
             0 => self.until_acceptable = true,
@@ -144,6 +221,20 @@ where
 
     /// Never stop asking until the user provides an acceptable
     /// answer.
+    ///
+    /// # Examples
+    ///
+    /// The following will ask the user if they would like
+    /// to continue until either "y", "n", "yes", or "no",
+    /// is entered.
+    ///
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("Do you want to continue?")
+    ///     .yes_no()
+    ///     .until_acceptable()
+    ///     .ask();
+    /// ```
     pub fn until_acceptable<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.until_acceptable = true;
         self
@@ -151,12 +242,51 @@ where
 
     /// Show the default response to the user that will be
     /// submitted if they enter an empty string `"\n"`.
+    ///
+    /// # Examples
+    ///
+    /// The following will ask the user if they would like
+    /// to continue until either "y", "n", "yes", or "no",
+    /// is entered. Since no default was set the prompt will
+    /// be displayed with `(y/n)` after it, and if the user
+    /// enters an empty string no answer will be returned
+    /// and they will be re-prompted.
+    ///
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("Do you want to continue?")
+    ///     .yes_no()
+    ///     .until_acceptable()
+    ///     .show_defaults()
+    ///     .ask();
+    /// ```
+    ///
+    /// If either `Answer::YES` or `Answer::NO` have been set
+    /// as default then the prompt will be shown with that
+    /// entry capitalized, either `(Y/n)` or `(y/N)`.
     pub fn show_defaults<'f>(&'f mut self) -> &'f mut Question<R, W> {
         self.show_defaults = true;
         self
     }
 
     /// Provide a default answer.
+    ///
+    /// # Examples
+    ///
+    /// The following will ask the user if they would like
+    /// to continue until either "y", "n", "yes", "no", or
+    /// "" an empty string is entered.  If an empty string
+    /// is entered `Answer::YES` will be returned.
+    ///
+    /// ```no_run
+    /// # use question::{Question, Answer};
+    /// Question::new("Do you want to continue?")
+    ///     .yes_no()
+    ///     .until_acceptable()
+    ///     .default(Answer::YES)
+    ///     .show_defaults()
+    ///     .ask();
+    /// ```
     pub fn default<'f>(&'f mut self, answer: Answer) -> &'f mut Question<R, W> {
         self.default = Some(answer);
         self
@@ -164,12 +294,46 @@ where
 
     /// Provide a clarification to be shown if the user does
     /// not enter an acceptable answer on the first try.
+    ///
+    /// # Examples
+    ///
+    /// The following will ask the user if they would like
+    /// to continue until either "y", "n", "yes", "no", or
+    /// "" an empty string is entered.  If an empty string
+    /// is entered `Answer::YES` will be returned. If the
+    /// user does not enter a valid response on the first
+    /// attempt, the clarification will be added to the
+    /// prompt.
+    ///
+    /// > Please enter either 'yes' or 'no'
+    /// > Do you want to continue? (Y/n)
+    ///
+    /// ```no_run
+    /// # use question::{Question, Answer};
+    /// Question::new("Do you want to continue?")
+    ///     .yes_no()
+    ///     .until_acceptable()
+    ///     .default(Answer::YES)
+    ///     .show_defaults()
+    ///     .clarification("Please enter either 'yes' or 'no'\n")
+    ///     .ask();
+    /// ```
     pub fn clarification<'f>(&'f mut self, c: &str) -> &'f mut Question<R, W> {
         self.clarification = Some(c.into());
         self
     }
 
     /// Ask the user a question exactly as it has been built.
+    ///
+    /// # Examples
+    ///
+    /// The following will return whatever the user enters
+    /// as an `Answer::RESPONSE(String)`.
+    /// 
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("What is your favorite color?").ask();
+    /// ```
     pub fn ask(&mut self) -> Option<Answer> {
         self.build_prompt();
         if self.until_acceptable {
@@ -187,13 +351,11 @@ where
     /// Ask a user a yes/no question until an acceptable
     /// response is given.
     ///
-    /// Shorthand for:
+    /// # Examples
     /// 
     /// ```no_run
     /// # use question::Question;
-    /// Question::new("Why?").yes_no()
-    ///     .until_acceptable()
-    ///     .ask();
+    /// Question::new("Continue?").confirm();
     /// ```
     pub fn confirm(&mut self) -> Answer {
         self.yes_no();
