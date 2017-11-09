@@ -1,3 +1,11 @@
+.cargo_build_template: &cargo_build
+  stage: build
+  script:
+    - cargo build --release --all
+  artifacts:
+    paths:
+      - target/release
+
 .cargo_test_template: &cargo_test
   stage: test
   script:
@@ -13,14 +21,21 @@ stages:
 # Build #
 #########
 
-build:
+build:stable:cargo:
   image: rust
-  stage: build
-  script:
-    - cargo build --release --all
-  artifacts:
-    paths:
-      - target/release
+  <<: *cargo_build
+
+build:beta:cargo:
+  image: registry.gitlab.com/iron-oxide/docker/rust-codecov:beta
+  <<: *cargo_build
+
+build:nightly:cargo:
+  image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
+  before_script:
+      - export PATH="$PATH:$HOME/.cargo/bin"
+      - which rustfmt || cargo install rustfmt-nightly
+      - cargo fmt -- --write-mode=diff
+      - cargo build --features "strict" --verbose --jobs 1 --all
 
 ########
 # test #
@@ -41,11 +56,6 @@ beta:cargo:
 
 nightly:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
-  before_script:
-      - export PATH="$PATH:$HOME/.cargo/bin"
-      - which rustfmt || cargo install rustfmt
-      - cargo fmt -- --write-mode=diff
-      - cargo build --features "strict"
   <<: *cargo_test
 
 
