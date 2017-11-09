@@ -3,12 +3,20 @@ Version 0.2.1 (TBD)
 
 Documentation
 -------------
+- Add links to release and running release docs in README
 - Add initial module level documentation 
 - Add initial public interface documentation
+- Updated examples
+
+CI
+--
+- Require nightly and beta to pass tests
+- Run rustfmt and clippy on nightly
 
 Misc
 ----
 - Ran rustfmt
+- Ran clippy 
 
 Version 0.2.0 (2017-11-5)
 =========================
