@@ -11,6 +11,43 @@
 //! # use question::Question;
 //! Question::new("Do you want to continue?").confirm();
 //! ```
+#![cfg_attr(feature = "strict", feature(plugin))]
+#![cfg_attr(feature = "strict", plugin(clippy))]
+#[deny(feature = "strict",
+       bad-style,
+       const-err,
+       dead-code,
+       extra-requirement-in-impl,
+       improper-ctypes,
+       legacy-directory-ownership,
+       non-shorthand-field-patterns,
+       no-mangle-generic-items,
+       overflowing-literals,
+       path-statements,
+       patterns-in-fns-without-body,
+       plugin-as-library,
+       private-in-public,
+       private-no-mangle-fns,
+       private-no-mangle-statics,
+       raw-pointer-derive,
+       safe-extern-statics,
+       unconditional-recursion,
+       unions-with-drop-fields,
+       unused,
+       unused-allocation,
+       unused-comparisons,
+       unused-parens,
+       while-true,
+       missing-debug-implementations,
+       missing-docs,
+       trivial-casts,
+       trivial-numeric-casts,
+       unused-extern-crates,
+       unused-import-braces,
+       unused-qualifications,
+       unused-results)]
+
+
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 
@@ -58,6 +95,14 @@ where
 }
 
 impl Question<std::io::Stdin, std::io::Stdout> {
+    /// Create a new `Question`.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use question::Question;
+    /// Question::new("What is your favorite color?").ask();
+    /// ```
     pub fn new(question: &str) -> Question<std::io::Stdin, std::io::Stdout> {
         let question = question.to_string();
         Question {
@@ -116,7 +161,7 @@ where
     ///     .until_acceptable()
     ///     .ask();
     /// ```
-    pub fn accept<'f>(&'f mut self, accepted: &str) -> &'f mut Question<R, W> {
+    pub fn accept(&mut self, accepted: &str) -> &mut Question<R, W> {
         let accepted = accepted.to_string();
         match self.acceptable {
             Some(ref mut vec) => vec.push(accepted),
@@ -143,7 +188,7 @@ where
     ///     .until_acceptable()
     ///     .ask();
     /// ```
-    pub fn acceptable<'f>(&'f mut self, accepted: Vec<&str>) -> &'f mut Question<R, W> {
+    pub fn acceptable(&mut self, accepted: Vec<&str>) -> &mut Question<R, W> {
         let mut accepted = accepted.into_iter().map(|x| x.into()).collect();
         match self.acceptable {
             Some(ref mut vec) => vec.append(&mut accepted),
@@ -167,7 +212,7 @@ where
     ///     .until_acceptable()
     ///     .ask();
     /// ```
-    pub fn yes_no<'f>(&'f mut self) -> &'f mut Question<R, W> {
+    pub fn yes_no(&mut self) -> &mut Question<R, W> {
         self.yes_no = true;
         let response_keys = vec![
             String::from("yes"),
@@ -208,7 +253,7 @@ where
     ///     .tries(3)
     ///     .ask();
     /// ```
-    pub fn tries<'f>(&'f mut self, tries: u64) -> &'f mut Question<R, W> {
+    pub fn tries(&mut self, tries: u64) -> &mut Question<R, W> {
         match tries {
             0 => self.until_acceptable = true,
             1 => return self,
@@ -233,7 +278,7 @@ where
     ///     .until_acceptable()
     ///     .ask();
     /// ```
-    pub fn until_acceptable<'f>(&'f mut self) -> &'f mut Question<R, W> {
+    pub fn until_acceptable(&mut self) -> &mut Question<R, W> {
         self.until_acceptable = true;
         self
     }
@@ -262,7 +307,7 @@ where
     /// If either `Answer::YES` or `Answer::NO` have been set
     /// as default then the prompt will be shown with that
     /// entry capitalized, either `(Y/n)` or `(y/N)`.
-    pub fn show_defaults<'f>(&'f mut self) -> &'f mut Question<R, W> {
+    pub fn show_defaults(&mut self) -> &mut Question<R, W> {
         self.show_defaults = true;
         self
     }
@@ -285,7 +330,7 @@ where
     ///     .show_defaults()
     ///     .ask();
     /// ```
-    pub fn default<'f>(&'f mut self, answer: Answer) -> &'f mut Question<R, W> {
+    pub fn default(&mut self, answer: Answer) -> &mut Question<R, W> {
         self.default = Some(answer);
         self
     }
@@ -316,7 +361,7 @@ where
     ///     .clarification("Please enter either 'yes' or 'no'\n")
     ///     .ask();
     /// ```
-    pub fn clarification<'f>(&'f mut self, c: &str) -> &'f mut Question<R, W> {
+    pub fn clarification(&mut self, c: &str) -> &mut Question<R, W> {
         self.clarification = Some(c.into());
         self
     }
@@ -337,7 +382,7 @@ where
         if self.until_acceptable {
             return Some(self.until_valid());
         }
-        if let Some(_) = self.tries {
+        if self.tries.is_some() {
             return self.max_tries();
         }
         match self.get_response() {
@@ -365,10 +410,10 @@ where
         let prompt = self.prompt.clone();
         match self.prompt_user(&prompt) {
             Ok(ref answer) if (self.default != None) && answer == "" => {
-                return Ok(self.default.clone().unwrap())
+                Ok(self.default.clone().unwrap())
             }
-            Ok(answer) => return Ok(Answer::RESPONSE(answer)),
-            Err(e) => return Err(e),
+            Ok(answer) => Ok(Answer::RESPONSE(answer)),
+            Err(e) => Err(e),
         }
     }
 
@@ -381,7 +426,7 @@ where
         if let Ok(response) = self.prompt_user(&prompt) {
             for key in valid_responses.keys() {
                 if *response.trim().to_lowercase() == *key {
-                    return Some(valid_responses.get(key).unwrap().clone());
+                    return Some(valid_responses[key].clone());
                 }
                 if let Some(default) = self.default.clone() {
                     if response == "" {
@@ -427,7 +472,7 @@ where
                 Some(Answer::NO) => self.prompt += " (y/N)",
                 Some(Answer::RESPONSE(ref s)) => {
                     self.prompt += " (";
-                    self.prompt += &s;
+                    self.prompt += s;
                     self.prompt += ")";
                 }
                 None => self.prompt += " (y/n)",
@@ -455,11 +500,24 @@ where
     }
 }
 
-
+/// An answer, the result of asking a `Question`.
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Answer {
+    /// A more complicated `RESPONSE(String)` that
+    /// can be evaluated in the context of the
+    /// application.
     RESPONSE(String),
+
+    /// A "yes" answer.
+    ///
+    /// Used to represent any answers that are acceptable
+    /// as a "yes" when asking a yes/no question.
     YES,
+
+    /// A "no" answer.
+    ///
+    /// Used to represent any answers that are acceptable
+    /// as a "no" when asking a yes/no question.
     NO,
 }
 
