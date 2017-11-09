@@ -1,5 +1,5 @@
 extern crate question;
-use question::{Question, Answer};
+use question::{Answer, Question};
 
 fn main() {
     let answer = Question::new("Continue?").confirm();

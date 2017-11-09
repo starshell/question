@@ -183,11 +183,9 @@ where
             .collect();
 
         match self.valid_responses {
-            Some(ref mut hashmap) => {
-                for (k, v) in valid_responses.drain() {
-                    hashmap.insert(k, v);
-                }
-            }
+            Some(ref mut hashmap) => for (k, v) in valid_responses.drain() {
+                hashmap.insert(k, v);
+            },
             None => self.valid_responses = Some(valid_responses),
         }
         self
@@ -329,7 +327,7 @@ where
     ///
     /// The following will return whatever the user enters
     /// as an `Answer::RESPONSE(String)`.
-    /// 
+    ///
     /// ```no_run
     /// # use question::Question;
     /// Question::new("What is your favorite color?").ask();
@@ -352,7 +350,7 @@ where
     /// response is given.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```no_run
     /// # use question::Question;
     /// Question::new("Continue?").confirm();

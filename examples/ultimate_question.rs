@@ -1,5 +1,5 @@
 extern crate question;
-use question::{Question, Answer};
+use question::{Answer, Question};
 
 fn main() {
     let question = "What is the answer to the Ultimate Question of Life, \
