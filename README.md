@@ -63,7 +63,7 @@ See [examples](examples/) for more.
 
 ## Contributing
 
-The project is mirrored to GitHub, but all development is done on GitLab. Please use the [GitLab issue tracker](https://gitlab.com/starshell/question/issues).
+The project is mirrored to GitHub, but all development is done on GitLab. Please use the [GitLab issue tracker](https://gitlab.com/starshell/question/issues). Don't have a GitLab account? Just email `incoming+starshell/question@gitlab.com` and those emails automatically become issues (with the comments becoming the email conversation).
 
 To contribute to Question, please see [CONTRIBUTING](CONTRIBUTING.md).
 
