@@ -51,7 +51,7 @@ build:nightly:cargo:
 # test #
 ########
 
-stable:cargo:
+test:stable:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:stable
   cache:
     key: stable
@@ -63,14 +63,14 @@ stable:cargo:
       bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN &&
       echo "Uploaded code coverage"
 
-beta:cargo:
+test:beta:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:beta
   cache:
     key: beta
     policy: pull
   <<: *cargo_test
 
-nightly:cargo:
+test:nightly:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
   cache:
     key: nightly
