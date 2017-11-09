@@ -26,21 +26,25 @@ Add `question` as a dependency in your `Cargo.toml` to use from crates.io:
 question = "0.2.0"
 ```
 
-Then add `extern crate question;` to your crate root and run `cargo build` or `cargo update && cargo build` for your project.
+Then add `extern crate question;` to your crate root and run `cargo build` or `cargo update && cargo build` for your project. Detailed documentation for releases can be found on [docs.rs](https://docs.rs/question/) and the bleeding edge docs for the latest GitLab repository version can be found on [GitLab pages](http://starshell.gitlab.io/question/question/).
 
 ### Example
-
-See [examples](examples/) for more.
 
 ```rust
 extern crate question;
 use question::{Question, Answer};
 
 fn main() {
-    let question = "What is the answer to the Ultimate Question of Life, the Universe, and Everything?";
-    let answer = Question::new(question).ask().unwrap();
-    let correct = Answer::RESPONSE(String::from("42"));
-    assert_eq!(answer, correct);
+    let answer = Question::new("Continue?")
+        .default(Answer::YES)
+        .show_defaults()
+        .confirm();
+
+    if answer == Answer::YES {
+        println!("Onward then!");
+    } else {
+        println!("Aborting...");
+    }
 }
 ```
 
@@ -48,12 +52,14 @@ Examples can also be ran directly:
 
 ```sh
 $ cargo run --example yes_no_with_defaults
-   Compiling question v0.2.0 (file:///home/datenstrom/workspace/starshell/question)
-    Finished dev [unoptimized + debuginfo] target(s) in 8.75 secs
+    Finished dev [unoptimized + debuginfo] target(s) in 0.0 secs
      Running `target/debug/examples/yes_no_with_defaults`
 Continue? (Y/n) why
-Continue? (Y/n) yes
+Continue? (Y/n) y
+Onward then!
 ```
+
+See [examples](examples/) for more.
 
 ## Contributing
 
