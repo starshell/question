@@ -32,7 +32,7 @@ Then add `extern crate question;` to your crate root and run `cargo build` or `c
 
 ```rust
 extern crate question;
-use question::{Question, Answer};
+use question::{Answer, Question};
 
 fn main() {
     let answer = Question::new("Continue?")
