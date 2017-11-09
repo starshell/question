@@ -11,31 +11,40 @@
   script:
     - cargo test --verbose --jobs 1 --all
 
+cache:
+  untracked: true
+
 stages:
-    - build
-    - test
-    - docs
-    - deploy
+  - build
+  - test
+  - docs
+  - deploy
 
 #########
 # Build #
 #########
 
 build:stable:cargo:
+  cache:
+    key: stable
   image: rust
   <<: *cargo_build
 
 build:beta:cargo:
+  cache:
+    key: beta 
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:beta
   <<: *cargo_build
 
 build:nightly:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
+  cache:
+    key: nightly
   before_script:
-      - export PATH="$PATH:$HOME/.cargo/bin"
-      - which rustfmt || cargo install rustfmt-nightly
-      - cargo fmt -- --write-mode=diff
-      - cargo build --features "strict" --verbose --jobs 1 --all
+    - export PATH="$PATH:$HOME/.cargo/bin"
+    - which rustfmt || cargo install rustfmt-nightly
+    - cargo fmt -- --write-mode=diff
+    - cargo build --features "strict" --verbose --jobs 1 --all
 
 ########
 # test #
@@ -43,6 +52,9 @@ build:nightly:cargo:
 
 stable:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:stable
+  cache:
+    key: stable
+    policy: pull
   <<: *cargo_test
   after_script:
     - |
@@ -52,10 +64,16 @@ stable:cargo:
 
 beta:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:beta
+  cache:
+    key: beta
+    policy: pull
   <<: *cargo_test
 
 nightly:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
+  cache:
+    key: nightly
+    policy: pull
   <<: *cargo_test
 
 
@@ -66,6 +84,9 @@ nightly:cargo:
 pages:
   image: rust
   stage: docs 
+  cache:
+    key: stable
+    policy: pull
   script:
     - cargo doc --all --no-deps
     - rm -rf public
@@ -79,10 +100,13 @@ pages:
     - tags
 
 release:
-    image: rust
-    stage: deploy
-    script:
-        - cargo login $CRATES_IO_TOKEN
-        - cargo publish
-    only:
-        - tags
+  image: rust
+  stage: deploy
+  cache:
+    key: stable
+    policy: pull
+  script:
+    - cargo login $CRATES_IO_TOKEN
+    - cargo publish
+  only:
+    - tags
