@@ -41,9 +41,10 @@ build:nightly:cargo:
   stage: build
   cache:
     key: nightly
-  script:
+  before-script:
     - export PATH="$PATH:$HOME/.cargo/bin"
     - which rustfmt || cargo install rustfmt-nightly
+  script:
     - cargo fmt -- --write-mode=diff
     - cargo build --features "strict" --verbose --jobs 1 --all
 
