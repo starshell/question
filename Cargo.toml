@@ -18,7 +18,7 @@ codecov = { repository = "starshell/question", branch = "master", service = "git
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-clippy = {version = "*", optional = true}
+clippy = {version = "0.0.169", optional = true}
 
 [features]
 default = []
