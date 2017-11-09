@@ -6,6 +6,10 @@ fn main() {
         .default(Answer::YES)
         .show_defaults()
         .confirm();
-    let correct = Answer::YES;
-    assert_eq!(answer, correct);
+
+    if answer == Answer::YES {
+        println!("Onward then!");
+    } else {
+        println!("Aborting...");
+    }
 }
