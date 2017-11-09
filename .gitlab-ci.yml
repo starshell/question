@@ -38,6 +38,7 @@ build:beta:cargo:
 
 build:nightly:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
+  stage: build
   cache:
     key: nightly
   script:
