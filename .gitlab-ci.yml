@@ -40,7 +40,7 @@ build:nightly:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
   cache:
     key: nightly
-  before_script:
+  script:
     - export PATH="$PATH:$HOME/.cargo/bin"
     - which rustfmt || cargo install rustfmt-nightly
     - cargo fmt -- --write-mode=diff
