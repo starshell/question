@@ -195,11 +195,9 @@ where
             .collect();
 
         match self.valid_responses {
-            Some(ref mut hashmap) => {
-                for (k, v) in valid_responses.drain() {
-                    hashmap.insert(k, v);
-                }
-            }
+            Some(ref mut hashmap) => for (k, v) in valid_responses.drain() {
+                hashmap.insert(k, v);
+            },
             None => self.valid_responses = Some(valid_responses),
         }
         self
@@ -546,15 +544,14 @@ mod tests {
         assert_eq!(false, q.yes_no);
     }
 
-
     #[test]
     fn set_default() {
         macro_rules! default {
-            ( $question:expr, $set:expr, $expected:expr ) => {
+            ($question:expr, $set:expr, $expected:expr) => {
                 let mut q = Question::new($question);
                 q.default($set);
                 assert_eq!($expected, q.default.unwrap());
-            }
+            };
         }
         let set = String::from("Yes Please!");
         let response = String::from("Yes Please!");
@@ -608,7 +605,7 @@ mod tests {
     #[test]
     fn prompt() {
         macro_rules! prompt {
-            ( $question:expr, $user_input:expr ) => {
+            ($question:expr, $user_input:expr) => {
                 let response = String::from($user_input);
                 let input = Cursor::new(response.clone().into_bytes());
                 let mut displayed_output = Cursor::new(Vec::new());
@@ -619,10 +616,11 @@ mod tests {
                     result = q.prompt_user($question).unwrap();
                 } // end borrow of output before using it
 
-                let output = String::from_utf8(displayed_output.into_inner()).expect("Not UTF-8");
+                let output =
+                    String::from_utf8(displayed_output.into_inner()).expect("Not UTF-8");
                 assert_eq!($question, output);
                 assert_eq!(response, result);
-            }
+            };
         }
         prompt!("what is the meaning to life", "42");
         prompt!("the universe", "42");
@@ -637,13 +635,13 @@ mod tests {
     #[test]
     fn basic_confirm() {
         macro_rules! confirm {
-            ( $i:expr, $q:expr, $expected:expr ) => {
+            ($i:expr, $q:expr, $expected:expr) => {
                 let response = String::from($i);
                 let input = Cursor::new(response.into_bytes());
                 let output = Cursor::new(Vec::new());
                 let actual = Question::with_cursor($q, input, output).confirm();
                 assert_eq!($expected, actual);
-            }
+            };
         }
         confirm!("y", "Continue?", Answer::YES);
         confirm!("yes", "Continue?", Answer::YES);
@@ -651,17 +649,16 @@ mod tests {
         confirm!("no", "Continue?", Answer::NO);
     }
 
-
     #[test]
     fn basic_ask() {
         macro_rules! ask {
-            ( $i:expr, $q:expr, $expected:expr ) => {
+            ($i:expr, $q:expr, $expected:expr) => {
                 let response = String::from($i);
                 let input = Cursor::new(response.into_bytes());
                 let output = Cursor::new(Vec::new());
                 let actual = Question::with_cursor($q, input, output).ask();
                 assert_eq!(Some(Answer::RESPONSE(String::from($expected))), actual);
-            }
+            };
         }
 
         ask!("y\n", "Continue?", "y");
@@ -692,14 +689,14 @@ mod tests {
     #[test]
     fn set_clarification() {
         macro_rules! confirm_clarification {
-            ( $i:expr, $q:expr, $clarification:expr ) => {
+            ($i:expr, $q:expr, $clarification:expr) => {
                 let response = String::from($i);
                 let input = Cursor::new(response.into_bytes());
                 let output = Cursor::new(Vec::new());
                 let mut q = Question::with_cursor($q, input, output);
                 q.clarification($clarification);
                 assert_eq!($clarification, q.clarification.unwrap());
-            }
+            };
         }
         confirm_clarification!("what is the meaning to life", "42", "14*3");
         confirm_clarification!("Continue?", "wat", "Please respond with yes/no");
@@ -708,14 +705,14 @@ mod tests {
     #[test]
     fn set_max_tries() {
         macro_rules! confirm_max_tries {
-            ( $i:expr, $q:expr, $max_tries:expr ) => {
+            ($i:expr, $q:expr, $max_tries:expr) => {
                 let response = String::from($i);
                 let input = Cursor::new(response.into_bytes());
                 let output = Cursor::new(Vec::new());
                 let mut q = Question::with_cursor($q, input, output);
                 q.tries($max_tries);
                 assert_eq!($max_tries, q.tries.unwrap());
-            }
+            };
         }
         confirm_max_tries!("what is the meaning to life", "42", 42);
         confirm_max_tries!("Continue?", "wat", 0x79);
@@ -724,14 +721,14 @@ mod tests {
     #[test]
     fn set_until_acceptable() {
         macro_rules! confirm_until_acceptable {
-            ( $i:expr, $q:expr, $until_acceptable:expr ) => {
+            ($i:expr, $q:expr, $until_acceptable:expr) => {
                 let response = String::from($i);
                 let input = Cursor::new(response.into_bytes());
                 let output = Cursor::new(Vec::new());
                 let mut q = Question::with_cursor($q, input, output);
                 q.until_acceptable();
                 assert_eq!($until_acceptable, q.until_acceptable);
-            }
+            };
         }
         confirm_until_acceptable!("what is the meaning to life", "42", true);
     }
@@ -739,14 +736,14 @@ mod tests {
     #[test]
     fn set_show_defaults() {
         macro_rules! confirm_show_defaults {
-            ( $i:expr, $q:expr, $show_defaults:expr ) => {
+            ($i:expr, $q:expr, $show_defaults:expr) => {
                 let response = String::from($i);
                 let input = Cursor::new(response.into_bytes());
                 let output = Cursor::new(Vec::new());
                 let mut q = Question::with_cursor($q, input, output);
                 q.show_defaults();
                 assert_eq!($show_defaults, q.show_defaults);
-            }
+            };
         }
         confirm_show_defaults!("what is the meaning to life", "42", true);
     }
@@ -754,14 +751,14 @@ mod tests {
     #[test]
     fn set_yes_no() {
         macro_rules! confirm_yes_no {
-            ( $i:expr, $q:expr, $yes_no:expr ) => {
+            ($i:expr, $q:expr, $yes_no:expr) => {
                 let response = String::from($i);
                 let input = Cursor::new(response.into_bytes());
                 let output = Cursor::new(Vec::new());
                 let mut q = Question::with_cursor($q, input, output);
                 q.yes_no();
                 assert_eq!($yes_no, q.yes_no);
-            }
+            };
         }
         confirm_yes_no!("what is the meaning to life", "42", true);
     }
