@@ -43,7 +43,7 @@ build:nightly:cargo:
     key: nightly
   before_script:
     - export PATH="$PATH:$HOME/.cargo/bin"
-    - which rustfmt || cargo install rustfmt-nightly
+    - which rustfmt || cargo install rustfmt-preview
   script:
     - cargo fmt -- --write-mode=diff
     - cargo build --features "strict" --verbose --jobs 1 --all
