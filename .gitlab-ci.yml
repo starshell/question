@@ -11,6 +11,14 @@
   script:
     - cargo test --verbose --jobs 1 --all
 
+.rustfmt_template: &rustfmt
+  stage: test
+  before_script:
+    - rustup component add rustfmt-preview
+  script:
+    - cargo fmt --all -- --write-mode=check
+  allow_failure: true
+
 cache:
   untracked: true
 
@@ -31,22 +39,16 @@ build:stable:cargo:
   <<: *cargo_build
 
 build:beta:cargo:
+  image: registry.gitlab.com/iron-oxide/docker/rust-codecov:beta
   cache:
     key: beta 
-  image: registry.gitlab.com/iron-oxide/docker/rust-codecov:beta
   <<: *cargo_build
 
 build:nightly:cargo:
   image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
-  stage: build
   cache:
     key: nightly
-  before_script:
-    - export PATH="$PATH:$HOME/.cargo/bin"
-    - which rustfmt || cargo install rustfmt-preview
-  script:
-    - cargo fmt -- --write-mode=diff
-    - cargo build --features "strict" --verbose --jobs 1 --all
+  <<: *cargo_build
 
 ########
 # test #
@@ -78,6 +80,30 @@ test:nightly:cargo:
     policy: pull
   <<: *cargo_test
 
+###########
+# rustfmt #
+###########
+
+rustfmt:stable:cargo:
+  image: registry.gitlab.com/iron-oxide/docker/rust-codecov:stable
+  cache:
+    key: stable
+    policy: pull
+  <<: *rustfmt
+
+rustfmt:beta:cargo:
+  image: registry.gitlab.com/iron-oxide/docker/rust-codecov:beta
+  cache:
+    key: beta
+    policy: pull
+  <<: *rustfmt
+
+rustfmt:nightly:cargo:
+  image: registry.gitlab.com/iron-oxide/docker/rust-codecov:nightly
+  cache:
+    key: nightly
+    policy: pull
+  <<: *rustfmt
 
 ##########
 # Deploy #
