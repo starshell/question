@@ -130,9 +130,6 @@ pages:
 release:
   image: rust
   stage: deploy
-  cache:
-    key: stable
-    policy: pull
   script:
     - cargo login $CRATES_IO_TOKEN
     - cargo publish
