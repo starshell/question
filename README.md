@@ -11,12 +11,6 @@ A Command Line Question Asker for Rust.
 
 Easy to use library for asking users questions when writing console/terminal applications.
 
------------------------------------------------------------------------
-
-**Warning:** This is my first released rust project, still very new, and not yet completely tested. That said it is very small and focused so it should come together quickly, and will likely continue to be maintained/extended since I write lots of CLI applications.
-
-Also, as indicated by the version none of the public API is yet stable. Suggestions are welcome.
-
 ## Usage
 
 Add `question` as a dependency in your `Cargo.toml` to use from crates.io:

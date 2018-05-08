@@ -12,6 +12,7 @@ The project is mirrored to GitHub, but all development is done on GitLab. Please
 - [ ] Refine public interface
 - [ ] More examples
 - [ ] Extend dependency injection to allow for testing of multiple user inputs
+- [ ] Allow for entry of custom valid answers (especially to support other languages)
 - [ ] Compliance with the [Rust API Guidelines](https://rust-lang-nursery.github.io/api-guidelines/)
 
 ## Wants

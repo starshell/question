@@ -1,6 +1,6 @@
 [package]
 name = "question"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Derek Goddeau <datenstrom@protonmail.com>"]
 description = "Ask a question, what more could you want?"
 documentation = "https://docs.rs/question/0.1.0/question/"
@@ -15,7 +15,7 @@ categories = ["command-line-utilities", "command-line-interface"]
 gitlab = { repository = "starshell/question", branch = "master" }
 appveyor = { repository = "starshell/question", branch = "master", service = "gitlab" }
 codecov = { repository = "starshell/question", branch = "master", service = "gitlab" }
-maintenance = { status = "actively-developed" }
+maintenance = { status = "passively-maintained" }
 
 [dependencies]
 clippy = {version = "0.0.169", optional = true}

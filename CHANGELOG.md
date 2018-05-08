@@ -1,4 +1,10 @@
-Version 0.2.1 (2017-11-9)
+Version 0.2.2 (2018-05-08)
+=========================
+
+- Propperly handle `until_acceptable` with `.accept()` and add test
+- Add an example of using `.accept()`
+
+Version 0.2.1 (2017-11-09)
 =========================
 
 Documentation
@@ -18,7 +24,7 @@ Misc
 - Ran rustfmt
 - Ran clippy 
 
-Version 0.2.0 (2017-11-5)
+Version 0.2.0 (2017-11-05)
 =========================
 
 Public Interface
@@ -66,7 +72,7 @@ Misc
 - Refactor to support dependency injection replacing `Stdin` and `Stdout` in tests.
 
 
-Version 0.1.0 (2017-11-3)
+Version 0.1.0 (2017-11-03)
 =========================
 
 - Initial release

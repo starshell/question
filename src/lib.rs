@@ -405,6 +405,27 @@ where
         None
     }
 
+    fn get_acceptable_response(&mut self) -> Option<Answer> {
+        let prompt = self.prompt.clone();
+        let acceptable_responses = match self.acceptable.clone() {
+            Some(thing) => thing,
+            None => panic!(),
+        };
+        if let Ok(response) = self.prompt_user(&prompt) {
+            for acceptable_response in acceptable_responses {
+                if *response.trim().to_lowercase() == acceptable_response {
+                    return Some(Answer::RESPONSE(acceptable_response.clone()));
+                }
+                if let Some(default) = self.default.clone() {
+                    if response == "" {
+                        return Some(default);
+                    }
+                }
+            }
+        }
+        None
+    }
+
     fn max_tries(&mut self) -> Option<Answer> {
         let mut attempts = 0;
         while attempts < self.tries.unwrap() {
@@ -421,15 +442,29 @@ where
     }
 
     fn until_valid(&mut self) -> Answer {
-        loop {
-            match self.get_valid_response() {
-                Some(answer) => return answer,
-                None => {
-                    self.build_clarification();
-                    continue;
+        if self.valid_responses.is_some() {
+            loop {
+                match self.get_valid_response() {
+                    Some(answer) => return answer,
+                    None => {
+                        self.build_clarification();
+                        continue;
+                    }
                 }
             }
         }
+        if self.acceptable.is_some() {
+            loop {
+                match self.get_acceptable_response() {
+                    Some(answer) => return answer,
+                    None => {
+                        self.build_clarification();
+                        continue;
+                    }
+                }
+            }
+        }
+        panic!("Valid responses must be defined for `until_acceptable()`")
     }
 
     fn build_prompt(&mut self) {
@@ -541,6 +576,18 @@ mod tests {
         q.accept("y");
         q.accept("yes");
         assert_eq!(vec!["y", "yes"], q.acceptable.unwrap());
+    }
+
+    #[test]
+    fn accept_ask() {
+        let response = String::from("y");
+        let input = Cursor::new(response.into_bytes());
+        let output = Cursor::new(Vec::new());
+        let actual = Question::with_cursor("y", input, output)
+            .accept("y")
+            .until_acceptable()
+            .ask();
+        assert_eq!(Some(Answer::RESPONSE(String::from("y"))), actual);
     }
 
     #[test]
