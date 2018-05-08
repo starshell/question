@@ -17,7 +17,7 @@ Add `question` as a dependency in your `Cargo.toml` to use from crates.io:
 
 ```toml
 [dependencies]
-question = "0.2.1"
+question = "0.2.2"
 ```
 
 Then add `extern crate question;` to your crate root and run `cargo build` or `cargo update && cargo build` for your project. Detailed documentation for releases can be found on [docs.rs](https://docs.rs/question/) and the bleeding edge docs for the latest GitLab repository version can be found on [GitLab pages](http://starshell.gitlab.io/question/question/).
